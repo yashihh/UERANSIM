@@ -1,1 +1,1 @@
-sudo ip netns exec TSN build/nr-gnb -c config/free5gc-ue.yaml
+sudo ip netns exec TSN build/nr-ue -c config/free5gc-ue.yaml
