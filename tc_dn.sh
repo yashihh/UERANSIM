@@ -1,5 +1,7 @@
+#!/bin/bash
 # Redirect traffic from enp0s9(TSN Master) to upfgtp
-if sudo tc qdisc show dev enp0s9 | grep -c "qdisc ingress"
+result=$(sudo tc qdisc show dev enp0s9 | grep -c "qdisc ingress")
+if [ "$result" = "1" ];
 then
     sudo tc qdisc del dev enp0s9 ingress
     echo "Delete qdisc ingress dev enp0s9"
