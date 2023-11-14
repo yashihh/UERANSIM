@@ -13,6 +13,9 @@
 #include <unistd.h>
 #include <utils/libc_error.hpp>
 #include <utils/scoped_thread.hpp>
+#include "ptp.hpp"
+#include "dstt/dstt.hpp"
+
 
 // TODO: May be reduced to MTU 1500
 #define RECEIVER_BUFFER_SIZE 8000
@@ -71,11 +74,37 @@ static void ReceiverThread(ReceiverArgs *args)
     }
 }
 
+static int msg_type(OctetString &m_data){
+    return m_data.getI(28) & 0x0f ;
+}
+
+std::string pkt_hex_dump(std::string data){
+    std::string str = "packet hex dump:\n";
+    int cnt = 0;
+    int byte = 0;
+    for (size_t i = 0; i < data.size(); i++){
+        str += data[i];
+        cnt += 1;
+        if ( cnt == 2 ){
+            str += " ";
+            cnt = 0;
+            byte += 1;
+            if( byte % 16 == 0 && i != 0){
+                str += "\n";
+                byte = 0;
+            }
+        }
+    }
+    return str;
+}
+
 namespace nr::ue
 {
 
 ue::TunTask::TunTask(TaskBase *base, int psi, int fd) : m_base{base}, m_psi{psi}, m_fd{fd}, m_receiver{}
 {
+    m_logger = m_base->logBase->makeUniqueLogger(m_base->config->getLoggerPrefix() + "tun");
+
 }
 
 void TunTask::onStart()
@@ -105,6 +134,21 @@ void TunTask::onLoop()
     case NtsMessageType::UE_APP_TO_TUN: {
         auto &w = dynamic_cast<NmAppToTun &>(*msg);
         ssize_t res = ::write(m_fd, w.data.data(), w.data.length());
+        int udpPort = w.data.get2I(20);
+        int messageType = -1;
+        /* send ptp message to dstt */
+        if( udpPort == PTP_EVENT_PORT || udpPort == PTP_GENERAL_PORT){
+            messageType = msg_type(w.data);
+        }
+        if( messageType == PTP_FOLLOW_UP){
+            //m_logger->debug("downlink ptpType = [%d]",messageType);
+            // double t;
+            // Dstt dstt_downlink;
+            // t = dstt_downlink.egress(w.data, messageType);
+        }
+        m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
+        
+        
         if (res < 0)
             push(NmError(GetErrorMessage("TUN device could not write")));
         else if (res != w.data.length())

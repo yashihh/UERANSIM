@@ -14,6 +14,6 @@ class Dstt
     virtual ~Dstt();
 
   public:
-    static void ingress(OctetString &stream, int32_t tsi_second, int32_t tsi_fraction);
-    static double egress(OctetString &stream, int ptpType);
+    // static void ingress(OctetString &stream, uint16_t  tsi_seconds_msb, uint32_t tsi_second_lsb, UInteger32 tsi_nanoseconds);
+    static double egress(OctetString &stream, int messageType);
 };

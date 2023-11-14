@@ -27,6 +27,7 @@ class TunTask : public NtsTask
     int m_psi;
     int m_fd;
     ScopedThread *m_receiver;
+    std::unique_ptr<Logger> m_logger;
 
     friend class UeCmdHandler;
 

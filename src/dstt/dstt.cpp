@@ -1,37 +1,38 @@
 #include "dstt.hpp"
 #include "utils/common.hpp"
 #include "netinet/in.h"
+#include "tun/ptp.h"
 
 Dstt::Dstt(){}
 
 Dstt::~Dstt(){}
 
 // add TLV extention to the suffix
-double Dstt::egress(OctetString &stream, int ptpType){
+double Dstt::egress(OctetString &stream, int messageType){
     int len = stream.length();
     int64_t CorrectionField = 0;
     // uint64_t NRR_Nvalue= 0;
     // uint64_t NRR_Dvalue = 0;
     // double NRRValue = 0;
     // get NRR value
-    if(ptpType == 8){
-        if( len< 67) return 0;
+    if(messageType == PTP_FOLLOW_UP){
+        if( len < 67) return 0;
         // replace 5GS residence time to correction field : -61 ~ -68
         for(int i=len-36, j=7; i<=len-29; ++i, --j){
-            NRR_Nvalue += stream.data()[i] << (j*8);
+            // NRR_Nvalue += stream.data()[i] << (j*8);
             stream.data()[i] = 0;
         }
         for(int i=len-28, j=7; i<=len-21; ++i, --j){
             NRR_Dvalue += stream.data()[i] << (j*8);
             stream.data()[i] = 0;
         }
-        NRRValue = (double)NRR_Nvalue/(double)NRR_Dvalue;
+        // NRRValue = (double)NRR_Nvalue/(double)NRR_Dvalue;
     }
 
 
     // compute 5GS residence time
-    int32_t tsi_second = htonl(stream.get4I(len - 10));
-    int32_t tsi_fraction = htonl(stream.get4I(len - 4));
+    int32_t tsi_second = stream.get4I(len - 10);
+    int32_t tsi_fraction = stream.get4I(len - 4);
     int64_t tse = utils::CurrentTimeMillis1();
     int32_t tse_second = (tse / 1e9);
     int32_t tse_fraction = (tse % int(1e9));
