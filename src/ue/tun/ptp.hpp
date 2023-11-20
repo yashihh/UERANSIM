@@ -1,5 +1,3 @@
-#define PTP
-
 #define PTP_SYNC                    0x0 ///< Sync
 #define PTP_DELAY_REQ               0x1 ///< Delay_Req
 #define PTP_PDELAY_REQ              0x2 ///< Pdelay_Req

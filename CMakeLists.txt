@@ -16,6 +16,7 @@ add_subdirectory(src/asn/ngap)
 add_subdirectory(src/lib)
 add_subdirectory(src/gnb)
 add_subdirectory(src/ue)
+add_subdirectory(src/dstt)
 
 #################### GNB EXECUTABLE ####################
 
@@ -38,6 +39,7 @@ target_compile_options(nr-ue PRIVATE -Wall -Wextra -pedantic)
 
 target_link_libraries(nr-ue common-lib)
 target_link_libraries(nr-ue ue)
+target_link_libraries(nr-ue dstt)
 
 ###################### IF BINDER ######################
 add_library(devbnd SHARED src/binder.cpp)

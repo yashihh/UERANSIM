@@ -16,6 +16,8 @@
 #include <utils/logger.hpp>
 #include <utils/nts.hpp>
 #include <vector>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 
 namespace nr::ue
 {
@@ -28,6 +30,7 @@ class TunTask : public NtsTask
     int m_fd;
     ScopedThread *m_receiver;
     std::unique_ptr<Logger> m_logger;
+    int sockfd;
 
     friend class UeCmdHandler;
 

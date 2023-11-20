@@ -15,6 +15,9 @@
 #include <utils/scoped_thread.hpp>
 #include "ptp.hpp"
 #include "dstt/dstt.hpp"
+#include <linux/if_packet.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
 
 
 // TODO: May be reduced to MTU 1500
@@ -98,13 +101,25 @@ std::string pkt_hex_dump(std::string data){
     return str;
 }
 
+struct sockaddr_in dest_addr;
+
 namespace nr::ue
 {
 
 ue::TunTask::TunTask(TaskBase *base, int psi, int fd) : m_base{base}, m_psi{psi}, m_fd{fd}, m_receiver{}
 {
     m_logger = m_base->logBase->makeUniqueLogger(m_base->config->getLoggerPrefix() + "tun");
+    /* Forwarding to target port  */
 
+
+    /* TODO： DSTT to port number */
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IDP)) == -1) {
+        perror("socket");
+    }
+    memset(&dest_addr, 0, sizeof(struct sockaddr_in));    
+    dest_addr.sin_family = AF_INET;
+    // dest_addr.sin_port = htons(12345);  // 替换为实际的目标端口
+    inet_pton(AF_INET, "目标IP地址", &(dest_addr.sin_addr));
 }
 
 void TunTask::onStart()
@@ -133,22 +148,22 @@ void TunTask::onLoop()
     {
     case NtsMessageType::UE_APP_TO_TUN: {
         auto &w = dynamic_cast<NmAppToTun &>(*msg);
-        ssize_t res = ::write(m_fd, w.data.data(), w.data.length());
         int udpPort = w.data.get2I(20);
         int messageType = -1;
         /* send ptp message to dstt */
         if( udpPort == PTP_EVENT_PORT || udpPort == PTP_GENERAL_PORT){
             messageType = msg_type(w.data);
+            if( messageType == PTP_FOLLOW_UP){
+                double t;
+                Dstt dstt_downlink;
+                t = dstt_downlink.egress(w.data, messageType);
+                m_logger->debug("residence_time:  [%lf]", t);
+            }
         }
-        if( messageType == PTP_FOLLOW_UP){
-            //m_logger->debug("downlink ptpType = [%d]",messageType);
-            // double t;
-            // Dstt dstt_downlink;
-            // t = dstt_downlink.egress(w.data, messageType);
-        }
-        m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
-        
-        
+        // m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
+        if (sendto(sockfd, w.data.data(), w.data.length(), 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0)
+                printf("Send failed\n");
+        ssize_t res = ::write(m_fd, w.data.data(), w.data.length());
         if (res < 0)
             push(NmError(GetErrorMessage("TUN device could not write")));
         else if (res != w.data.length())
