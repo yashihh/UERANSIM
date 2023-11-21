@@ -102,6 +102,7 @@ std::string pkt_hex_dump(std::string data){
 }
 
 struct sockaddr_in dest_addr;
+struct sockaddr_ll socket_address;
 
 namespace nr::ue
 {
@@ -113,13 +114,24 @@ ue::TunTask::TunTask(TaskBase *base, int psi, int fd) : m_base{base}, m_psi{psi}
 
 
     /* TODO： DSTT to port number */
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IDP)) == -1) {
+    // if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+    //     perror("socket");
+    // }
+    // memset(&dest_addr, 0, sizeof(struct sockaddr_in));    
+    // dest_addr.sin_family = AF_INET;
+    // // dest_addr.sin_port = htons(12345);  // 替换为实际的目标端口
+    // inet_pton(AF_INET, "172.168.56.2", &(dest_addr.sin_addr));
+        char ifName[IFNAMSIZ];
+    struct ifreq if_idx,if_mac;
+    strcpy(ifName, "enp0s10");
+    if ((sockfd = socket(AF_PACKET, SOCK_RAW, IPPROTO_RAW)) == -1) {
         perror("socket");
     }
-    memset(&dest_addr, 0, sizeof(struct sockaddr_in));    
-    dest_addr.sin_family = AF_INET;
-    // dest_addr.sin_port = htons(12345);  // 替换为实际的目标端口
-    inet_pton(AF_INET, "目标IP地址", &(dest_addr.sin_addr));
+    memset(&if_idx, 0, sizeof(struct ifreq));
+    strncpy(if_idx.ifr_name, ifName, IFNAMSIZ-1);
+    if (ioctl(sockfd, SIOCGIFINDEX, &if_idx) < 0)
+        perror("SIOCGIFINDEX");
+    socket_address.sll_ifindex = if_idx.ifr_ifindex;
 }
 
 void TunTask::onStart()
@@ -153,6 +165,8 @@ void TunTask::onLoop()
         /* send ptp message to dstt */
         if( udpPort == PTP_EVENT_PORT || udpPort == PTP_GENERAL_PORT){
             messageType = msg_type(w.data);
+            // dest_addr.sin_port = htons(udpPort);  // 替换为实际的目标端口
+
             if( messageType == PTP_FOLLOW_UP){
                 double t;
                 Dstt dstt_downlink;
