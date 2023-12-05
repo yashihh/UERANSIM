@@ -2,7 +2,7 @@
 echo "**** namespace TSN"
 sudo iptables -t mangle -F PREROUTING #flush
 sudo iptables -t mangle -A PREROUTING -i enp0s9 -s 172.168.56.3 -j TEE --gateway 10.60.0.0
-sudo iptables -t mangle -A PREROUTING -i upfgtp -s  172.168.56.2 -j TEE --gateway 172.168.56.0
+sudo iptables -t mangle -A PREROUTING -i upfgtp -s  172.168.57.10 -j TEE --gateway 172.168.56.0
 sudo iptables -t mangle -L | grep TEE
 # namespace TSN2
 echo "**** namespace TSN2"
