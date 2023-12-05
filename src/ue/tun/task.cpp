@@ -159,13 +159,12 @@ void TunTask::onLoop()
         /* send ptp message to dstt */
         if( udpPort == PTP_EVENT_PORT || udpPort == PTP_GENERAL_PORT){
             messageType = msg_type(w.data);
-            // dest_addr.sin_port = htons(udpPort);  // 替换为实际的目标端口
 
             if( messageType == PTP_FOLLOW_UP){
                 double t;
                 Dstt dstt_downlink;
                 t = dstt_downlink.egress(w.data, messageType);
-                m_logger->debug("residence_time:  [%lf]", t);
+                // m_logger->debug("residence_time:  [%lf]", t);
             }
             /*add ethernet msg*/
             uint8_t ether_msg[14] = { 
@@ -178,12 +177,7 @@ void TunTask::onLoop()
             if (sendto(sockfd, w.data.data(), w.data.length(), 0, (struct sockaddr*)&sll, sizeof(struct sockaddr_ll)) < 0)
                 printf("Send failed\n");
         }
-        m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
-        // ssize_t res = ::write(m_fd, w.data.data(), w.data.length());
-        // if (res < 0)
-        //     push(NmError(GetErrorMessage("TUN device could not write")));
-        // else if (res != w.data.length())
-        //     push(NmError(GetErrorMessage("TUN device partially written")));
+        // m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
         break;
     }
     case NtsMessageType::UE_TUN_TO_APP: {

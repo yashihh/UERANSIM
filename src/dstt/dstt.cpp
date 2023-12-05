@@ -2,6 +2,7 @@
 #include "utils/common.hpp"
 #include "netinet/in.h"
 #include "ue/tun/ptp.hpp"
+#include <chrono>
 
 Dstt::Dstt(){}
 
@@ -29,20 +30,18 @@ double Dstt::egress(OctetString &stream, int messageType){
     //     // NRRValue = (double)NRR_Nvalue/(double)NRR_Dvalue;
     // }
 
-
+   
     // compute 5GS residence time
-    // int16_t tsi_seconds_msb = stream.get2I(len - 10);
     int32_t tsi_seconds_lsb = stream.get4I(len - 8);
-    int64_t tsi_fraction = stream.get4I(len - 4);
-    int64_t tse = utils::CurrentTimeMillis();
-    int32_t tse_second = (tse / 1e3);
-    int32_t tse_fraction = tse % int(1e3) * 1e6;
+    int32_t tsi_fraction = stream.get4I(len - 4);
+    int64_t tsi = tsi_seconds_lsb*1e9 + tsi_fraction;
 
-    int32_t residence_time_second = tse_second - tsi_seconds_lsb; 
-    int32_t residence_time_fraction = tse_fraction - tsi_fraction;
-    // printf("[DSTT] residence_time_second: [%ld] residence_time_fraction: [%ld] \n",  residence_time_second, residence_time_fraction);
+    std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
+    std::chrono::nanoseconds nanoSeconds = currentTime.time_since_epoch();
+    auto tse = nanoSeconds.count();
 
-    int64_t residence_time = (residence_time_second + (residence_time_fraction / 1e9)) * 1e9;
+    int64_t residence_time = tse - tsi;
+    // printf("[DSTT] resident: [%ld]\n", residence_time);
 
     //residence_time /= 1.1;
 
@@ -89,6 +88,6 @@ double Dstt::egress(OctetString &stream, int messageType){
         }
     }
     
-    return residence_time_second + (residence_time_fraction / 1e9);
+    return residence_time/1e9;
 }
 
