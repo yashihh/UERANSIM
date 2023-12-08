@@ -3,10 +3,36 @@
 #include "netinet/in.h"
 #include "ue/tun/ptp.hpp"
 #include <chrono>
+#include "ptp_suffix.h"
 
 Dstt::Dstt(){}
 
 Dstt::~Dstt(){}
+
+// TODO: add TLV extention to the suffix
+static void ingress(OctetString &stream, int64_t tsi){
+    uint16_t empty = 0;
+    int len = stream.length();
+
+    // TLV type
+    stream.appendOctet2(TLV_ORGANIZATION_EXTENSION);
+    
+    // length of TLV
+    stream.appendOctet2(sizeof(ptp_suffix));
+
+    // Organizationally unique identifier(OUI) : -32 ~ -34
+    stream.appendOctet3(stream.get3(len-34));
+
+    // Organization subtype
+    stream.appendOctet3(1);
+
+    // ingress time(80 bits)
+    stream.appendOctet4(htonl(tsi_second));
+    stream.appendOctet2(empty);
+    stream.appendOctet4(htonl(tsi_fraction));
+    
+}
+
 
 // add TLV extention to the suffix
 double Dstt::egress(OctetString &stream, int messageType){

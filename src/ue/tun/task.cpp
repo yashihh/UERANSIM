@@ -181,6 +181,22 @@ void TunTask::onLoop()
         break;
     }
     case NtsMessageType::UE_TUN_TO_APP: {
+        auto &w = dynamic_cast<NmAppToTun &>(*msg);
+        int udpPort = w.data.get2I(20);
+        int messageType = -1;
+        /* send ptp message to dstt */
+        if( udpPort == PTP_EVENT_PORT || udpPort == PTP_GENERAL_PORT){
+            messageType = msg_type(w.data);
+
+            if( messageType == PTP_DELAY_REQ){
+                Dstt dstt_uplink;
+                std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
+                std::chrono::nanoseconds nanoSeconds = currentTime.time_since_epoch();
+                auto tsi = nanoSeconds.count();
+                dstt_uplink.ingress(w.data, tsi);
+                m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
+            }
+        }
         m_base->appTask->push(std::move(msg));
         break;
     }
