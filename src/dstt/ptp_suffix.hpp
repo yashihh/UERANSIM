@@ -21,9 +21,9 @@ struct Data{
 // }__attribute__ ((packed));
 
 struct ptp_suffix {
-    uint16_t    type; // 2 bytes
+    uint16_t        type; // 2 bytes
     unsigned short  length; // 2 bytes
-    uint8_t            organization_Id[3] ; // 3 bytes
-    uint8_t            subtype[3]; // 3 bytes
+    uint8_t         organization_Id[3] ; // 3 bytes
+    uint8_t         subtype[3]; // 3 bytes
     struct Data     data; // 10 bytes
 } __attribute__ ((packed));
