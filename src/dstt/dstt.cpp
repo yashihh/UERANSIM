@@ -3,7 +3,6 @@
 #include "netinet/in.h"
 #include "ue/tun/ptp.hpp"
 #include <chrono>
-#include "ptp_suffix.hpp"
 #include <cstdint>
 #include <cmath>
 
@@ -12,11 +11,17 @@ Dstt::Dstt(){}
 
 Dstt::~Dstt(){}
 
+#define TLV_ORGANIZATION_EXTENSION			0x0003
 // TODO: add TLV extention to the suffix
-void Dstt::ingress(OctetString &stream, int64_t tsi){
+void Dstt::ingress(OctetString &stream){
     uint16_t empty = 0;
-    int64_t tsi_second = 0;
-    int64_t tsi_fraction = 0;
+
+    std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
+    std::chrono::nanoseconds nanoSeconds = currentTime.time_since_epoch();
+    auto tsi = nanoSeconds.count();
+    int32_t tsi_second = (tsi / 1e9);
+    int32_t tsi_fraction = (tsi % int(1e9));
+    // printf("[DSTT] [%lld]tsi: [%ld, %ld]\n",tsi, tsi_second, tsi_fraction);
     
     // TLV type
     stream.appendOctet2(TLV_ORGANIZATION_EXTENSION);
@@ -24,15 +29,11 @@ void Dstt::ingress(OctetString &stream, int64_t tsi){
     // length of TLV
     stream.appendOctet2(20);
 
-    // Organizationally unique identifier(OUI) : 62 ~ 64
-    stream.appendOctet3(stream.get3(62));
+    // Organizationally unique identifier(OUI) : 62 ~ 64 (:ethernet -14)
+    stream.appendOctet3(stream.get3(48));
 
     // Organization subtype
     stream.appendOctet3(1);
-    tsi_second = tsi / static_cast<int64_t>(pow(10, 9));
-    tsi_fraction = tsi % static_cast<int64_t>(pow(10, 9));
-
-    // printf("[DSTT] tsi: [%s, %s]\n", tsi_second, tsi_fraction);
 
     // ingress time(80 bits)
     stream.appendOctet2(empty);
