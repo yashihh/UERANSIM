@@ -166,16 +166,22 @@ void TunTask::onLoop()
                 t = dstt_downlink.egress(w.data, messageType);
                 // m_logger->debug("residence_time:  [%lf]", t);
             }
-            /*add ethernet msg*/
-            uint8_t ether_msg[14] = { 
-                0x01, 0x00, 0x5e, 0x00, 0x01, 0x81,  //Dst Mac
-                0x08, 0x00, 0x27, 0x9d, 0x65, 0x39,  //Src Mac
-                0x08, 0x00 //ether type
-            };
-            OctetString msg = OctetString::FromArray(ether_msg, sizeof(ether_msg));
-            w.data = OctetString::Concat(msg, w.data);
-            if (sendto(sockfd, w.data.data(), w.data.length(), 0, (struct sockaddr*)&sll, sizeof(struct sockaddr_ll)) < 0)
-                printf("Send failed\n");
+            ssize_t res = ::write(m_fd, w.data.data(), w.data.length());
+            if (res < 0)
+                push(NmError(GetErrorMessage("TUN device could not write")));
+            else if (res != w.data.length())
+                push(NmError(GetErrorMessage("TUN device partially written")));
+            break;
+            // /*add ethernet msg*/
+            // uint8_t ether_msg[14] = { 
+            //     0x01, 0x00, 0x5e, 0x00, 0x01, 0x81,  //Dst Mac
+            //     0x08, 0x00, 0x27, 0x39, 0xc7, 0xf0,  //Src Mac
+            //     0x08, 0x00 //ether type
+            // };
+            // OctetString msg = OctetString::FromArray(ether_msg, sizeof(ether_msg));
+            // w.data = OctetString::Concat(msg, w.data);
+            // if (sendto(sockfd, w.data.data(), w.data.length(), 0, (struct sockaddr*)&sll, sizeof(struct sockaddr_ll)) < 0)
+            //     printf("Send failed\n");
         }
         // m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
         break;
