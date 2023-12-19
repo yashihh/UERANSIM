@@ -93,7 +93,8 @@ double Dstt::egress(OctetString &stream, int messageType){
         // octet8 t(residence_time);
         // residence_time = 0;
         // octet8 t(residence_time);
-        for(int i=36, j=0; i<=43; ++i, ++j){
+        
+        for(int i=36, j=0; i<=41; ++i, ++j){
             stream.data()[i] = t[j+2];
             /*
             if(j < 4)
@@ -102,7 +103,13 @@ double Dstt::egress(OctetString &stream, int messageType){
                 stream.data()[i] = frac[j % 4];
             */
         }
+        // TODO: Fix Checksum
+        // checksum set to zero
+        stream.data()[26] = 0x00;
+        stream.data()[27] = 0x00;
+
     }else{
+        // TODO: other type
         if( len < 45) return 0;
         // replace 5GS residence time to correction field : -39 ~ -46
         CorrectionField = stream.get8L(len-46);
