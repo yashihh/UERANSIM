@@ -135,18 +135,18 @@ void TunTask::onLoop()
         int udpPort = w.data.get2I(20);
         int messageType = -1;
         /* send ptp message to dstt */
-        if( udpPort == PTP_EVENT_PORT || udpPort == PTP_GENERAL_PORT){
-            messageType = msg_type(w.data);
+        // if( udpPort == PTP_EVENT_PORT || udpPort == PTP_GENERAL_PORT){
+        //     messageType = msg_type(w.data);
 
-            if( messageType == PTP_FOLLOW_UP){
-                double t;
-                Dstt dstt_downlink;
-                t = dstt_downlink.egress(w.data, messageType);
-                // m_logger->debug("residence_time:  [%lf]", t);
-            }
-            // m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
+        //     if( messageType == PTP_FOLLOW_UP){
+        //         double t;
+        //         Dstt dstt_downlink;
+        //         t = dstt_downlink.egress(w.data, messageType);
+        //         // m_logger->debug("residence_time:  [%lf]", t);
+        //     }
+        //     // m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
 
-        }
+        // }
         ssize_t res = ::write(m_fd, w.data.data(), w.data.length());
         if (res < 0)
             push(NmError(GetErrorMessage("TUN device could not write")));
@@ -158,14 +158,16 @@ void TunTask::onLoop()
         auto &w = dynamic_cast<NmUeTunToApp &>(*msg);
         int udpPort = w.data.get2I(20);
         int messageType = -1;
-        /* send ptp message to dstt */
+        /* send ptp message to dstt (add TSi)*/
+        // 成功送過去GTP5G 檢查 checksum 看要步要改
         if( udpPort == PTP_EVENT_PORT || udpPort == PTP_GENERAL_PORT){
             messageType = msg_type(w.data);
+            // m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
 
-            if( messageType == PTP_DELAY_REQ){
+            if( messageType == PTP_FOLLOW_UP){
                 Dstt dstt_uplink;
                 dstt_uplink.ingress(w.data);
-                // m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
+                // m_logger->info("*** After ***\n%s", pkt_hex_dump(w.data.toHexString()).c_str());
             }
         }
         m_base->appTask->push(std::move(msg));
