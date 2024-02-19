@@ -127,7 +127,7 @@ void TunTask::onLoop()
     auto msg = take();
     if (!msg)
         return;
-
+    // TODO: E2EUL
     switch (msg->msgType)
     {
     case NtsMessageType::UE_APP_TO_TUN: {
