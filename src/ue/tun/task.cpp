@@ -159,15 +159,11 @@ void TunTask::onLoop()
         int udpPort = w.data.get2I(20);
         int messageType = -1;
         /* send ptp message to dstt (add TSi)*/
-        // 成功送過去GTP5G 檢查 checksum 看要步要改
         if( udpPort == PTP_EVENT_PORT || udpPort == PTP_GENERAL_PORT){
             messageType = msg_type(w.data);
-            // m_logger->info("%s", pkt_hex_dump(w.data.toHexString()).c_str());
-
             if( messageType == PTP_FOLLOW_UP){
                 Dstt dstt_uplink;
                 dstt_uplink.ingress(w.data);
-                // m_logger->info("*** After ***\n%s", pkt_hex_dump(w.data.toHexString()).c_str());
             }
         }
         m_base->appTask->push(std::move(msg));
