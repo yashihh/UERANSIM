@@ -1,3 +1,21 @@
+## My usage
+- COMPILE ueransim
+  ``` 
+  # under /UERANSIM
+  make
+  ```
+- COMPILE and LOAD **ResidentTime** MODULE for uplink Delay_resp
+  ``` 
+  # under /UERANSIM
+  make module
+  make install
+  ```
+  - unload `make uninstall`
+  - clean `make clean`
+- DISPLAY Resident_time value
+  ```
+  cat /proc/ResidentTime
+  ```
 <p align="center">
   <a href="https://github.com/aligungr/UERANSIM"><img src="/.github/logo.png" width="75" title="UERANSIM"></a>
 </p>
