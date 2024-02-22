@@ -6,47 +6,70 @@
 #include <cstdint>
 #include <cmath>
 
-
 Dstt::Dstt(){}
 
 Dstt::~Dstt(){}
 
 #define TLV_ORGANIZATION_EXTENSION			0x0003
-// TODO: add TLV extention to the suffix
-void Dstt::ingress(OctetString &stream){
-    uint16_t empty = 0;
+void Dstt::ingress(OctetString &stream, int messageType, int64_t rt){
 
-    std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
-    std::chrono::nanoseconds nanoSeconds = currentTime.time_since_epoch();
-    auto tsi = nanoSeconds.count();
-    int32_t tsi_second = (tsi / 1e9);
-    int32_t tsi_fraction = (tsi % int(1e9));
-    // printf("[DSTT] [%lld]tsi: [%ld, %ld]\n",tsi, tsi_second, tsi_fraction);
-    
-    // TLV type
-    stream.appendOctet2(TLV_ORGANIZATION_EXTENSION);
-    
-    // length of TLV
-    stream.appendOctet2(20);
+    switch( messageType ){
+        // add TLV extention to the suffix
+        case PTP_FOLLOW_UP: {
+            uint16_t empty = 0;
 
-    // Organizationally unique identifier(OUI) : 62 ~ 64 (:ethernet -14)
-    stream.appendOctet3(stream.get3(48));
+            std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
+            std::chrono::nanoseconds nanoSeconds = currentTime.time_since_epoch();
+            auto tsi = nanoSeconds.count();
+            int32_t tsi_second = (tsi / 1e9);
+            int32_t tsi_fraction = (tsi % int(1e9));
+            // printf("[DSTT] [%lld]tsi: [%ld, %ld]\n",tsi, tsi_second, tsi_fraction);
+            
+            // TLV type
+            stream.appendOctet2(TLV_ORGANIZATION_EXTENSION);
+            
+            // length of TLV
+            stream.appendOctet2(20);
 
-    // Organization subtype
-    stream.appendOctet3(1);
+            // Organizationally unique identifier(OUI) : 62 ~ 64 (:ethernet -14)
+            stream.appendOctet3(stream.get3(48));
 
-    // ingress time(80 bits)
-    stream.appendOctet2(empty);
-    stream.appendOctet4(htonl(tsi_second));
-    stream.appendOctet4(htonl(tsi_fraction));
+            // Organization subtype
+            stream.appendOctet3(1);
+
+            // ingress time(80 bits)
+            stream.appendOctet2(empty);
+            stream.appendOctet4(htonl(tsi_second));
+            stream.appendOctet4(htonl(tsi_fraction));
+            break;
+        }
+        case PTP_DELAY_RESP: {
+
+            if ( rt < 0){
+                printf("[DSTT] NO Resident Time from delay_req\n");
+                break;
+            }
+            int64_t CorrectionField = stream.get8L(36); // 36-43 bytes
+            octet8 t((CorrectionField>>16) + rt);
+            printf("[DSTT] PTP_DELAY_RESP fill correctionfield: [%d]\n", t);
+
+            for(int i=36, j=0; i<=41; ++i, ++j){
+                stream.data()[i] = t[j+2];
+            }
+
+            // TODO: Fix Checksum
+            // checksum set to zero
+            stream.data()[26] = 0x00;
+            stream.data()[27] = 0x00;
+            break;
+        }
+    }
     
 }
 
-
 // add TLV extention to the suffix
-double Dstt::egress(OctetString &stream, int messageType){
+int Dstt::egress(OctetString &stream, int messageType){
     int len = stream.length();
-    int64_t CorrectionField = 0;
     // uint64_t NRR_Nvalue= 0;
     // uint64_t NRR_Dvalue = 0;
     // double NRRValue = 0;
@@ -83,10 +106,12 @@ double Dstt::egress(OctetString &stream, int messageType){
     // remove suffix part
     stream = stream.subCopy(0, len-20); // last 20 bytes
     len = stream.length();
+    
+    // fill correction field when E2EDL "ONLY FOR FOLLOW_UP" 
     if(messageType == PTP_FOLLOW_UP){
         if( len < 67) return 0;
         // replace 5GS residence time to correction field : -61 ~ -68
-        CorrectionField = stream.get8L(36); // 36-43 bytes
+        int64_t CorrectionField = stream.get8L(36); // 36-43 bytes
         octet8 t((CorrectionField>>16) + residence_time);
         // residence_time += (CorrectionField>>16);
         // residence_time *= 0.998;
@@ -107,29 +132,10 @@ double Dstt::egress(OctetString &stream, int messageType){
         // checksum set to zero
         stream.data()[26] = 0x00;
         stream.data()[27] = 0x00;
-
     }else{
-        // TODO: other type
-        if( len < 45) return 0;
-        // replace 5GS residence time to correction field : -39 ~ -46
-        CorrectionField = stream.get8L(len-46);
-        octet8 t((CorrectionField>>16) + residence_time);
-        // residence_time += (CorrectionField>>16);
-        // residence_time *= 0.998;
-        // octet8 t(residence_time);
-        // residence_time = 0;
-        // octet8 t(residence_time);
-        for(int i=len-46, j=0; i<=len-41; ++i, ++j){
-            stream.data()[i] = t[j+2];
-            /*
-            if(j < 4)
-                stream.data()[i] = sec[j % 4];
-            else
-                stream.data()[i] = frac[j % 4];
-            */
-        }
+
     }
     
-    return residence_time/1e9;
+    return residence_time;
 }
 

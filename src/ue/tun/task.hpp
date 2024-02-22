@@ -44,4 +44,6 @@ class TunTask : public NtsTask
     void onQuit() override;
 };
 
+inline int64_t RESIDENCE_TIME = -1;
+
 } // namespace nr::ue

@@ -20,13 +20,3 @@ build: FORCE
 	@printf "${GREEN}UERANSIM successfully built.${NC}\n"
 
 FORCE:
-
-# for proc/ResidentTime
-module:
-	make -C proc
-clean:
-	make clean -C proc
-install:
-	sudo make install -C proc
-uninstall:
-	sudo make uninstall -C proc
