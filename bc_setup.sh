@@ -1,5 +1,6 @@
 # namespace free5GC
 sudo iptables -t mangle -F OUTPUT
+sudo iptables -t mangle -F PREROUTING
 sudo ifconfig upfgtp 10.60.0.1
 sudo iptables -t mangle -I OUTPUT -d 224.0.1.129 -j TEE --gateway 10.60.0.0
 sudo iptables -t mangle -A PREROUTING -i upfgtp -s 172.168.56.10 -j TEE --gateway 172.168.56.0
