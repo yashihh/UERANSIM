@@ -134,11 +134,14 @@ void TunTask::onLoop()
         auto &w = dynamic_cast<NmAppToTun &>(*msg);
         int udpPort = w.data.get2I(20);
         int messageType = -1;
+                        std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
+                std::chrono::nanoseconds nanoSeconds = currentTime.time_since_epoch();
         /* send ptp message to dstt */
         if( udpPort == PTP_EVENT_PORT || udpPort == PTP_GENERAL_PORT){
             messageType = msg_type(w.data);
 
             if( messageType == PTP_FOLLOW_UP){
+
                 double t;
                 Dstt dstt_downlink;
                 t = dstt_downlink.egress(w.data, messageType);
@@ -148,6 +151,10 @@ void TunTask::onLoop()
 
         }
         ssize_t res = ::write(m_fd, w.data.data(), w.data.length());
+        std::chrono::system_clock::time_point next = std::chrono::system_clock::now();
+        std::chrono::nanoseconds AnanoSeconds = next.time_since_epoch();
+        m_logger->debug("UE-DS-TT residence time:  [%lf]", AnanoSeconds - nanoSeconds);
+
         if (res < 0)
             push(NmError(GetErrorMessage("TUN device could not write")));
         else if (res != w.data.length())

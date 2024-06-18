@@ -86,6 +86,39 @@ void IEPduAddress::Encode(const IEPduAddress &ie, OctetString &stream)
     stream.append(ie.pduAddressInformation);
 }
 
+IEMacAddress::IEMacAddress(OctetString &&address,std::string &addr):macAddress(std::move(address)),mac(addr)
+{
+}
+
+void IEMacAddress::Encode(const IEMacAddress &ie, OctetString &stream)
+{
+    EncodeBcdString(stream, ie.mac, 6, false, 0);
+}
+
+IEMacAddress IEMacAddress::Decode(const OctetView &stream, int length)
+{
+    IEMacAddress r;
+    r.macAddress = stream.readOctetString(length - 1);
+    return r;
+}
+
+IEResidenceTime::IEResidenceTime(OctetString &&t):residence_time(std::move(t))
+{
+}
+
+void IEResidenceTime::Encode(const IEResidenceTime &ie, OctetString &stream)
+{
+    //EncodeBcdString(stream, ie.mac, 6, false, 0);
+    stream.append(ie.residence_time);
+}
+
+IEResidenceTime IEResidenceTime::Decode(const OctetView &stream, int length)
+{
+    IEResidenceTime r;
+    r.residence_time = stream.readOctetString(length - 1);
+    return r;
+}
+
 IESNssai::IESNssai(const octet &sst, const std::optional<octet3> &sd, const std::optional<octet> &mappedHplmnSst,
                    const std::optional<octet3> &mappedHplmnSd)
     : sst(sst), sd(sd), mappedHplmnSst(mappedHplmnSst), mappedHplmnSd(mappedHplmnSd)
@@ -407,7 +440,7 @@ void IEGprsTimer2::Encode(const IEGprsTimer2 &ie, OctetString &stream)
     stream.appendOctet(ie.value);
 }
 
-IE5gSmCapability::IE5gSmCapability(EReflectiveQoS rqos, EMultiHomedIPv6PduSession mh6Pdu) : rqos(rqos), mh6pdu(mh6Pdu)
+IE5gSmCapability::IE5gSmCapability(EReflectiveQoS rqos, EMultiHomedIPv6PduSession mh6Pdu, ETransferOfPortManagementInformationContainers tpmic) : rqos(rqos), mh6pdu(mh6Pdu), tpmic(tpmic)
 {
 }
 
@@ -416,7 +449,7 @@ IE5gSmCapability IE5gSmCapability::Decode(const OctetView &stream, int length)
     IE5gSmCapability r;
     r.rqos = static_cast<EReflectiveQoS>(stream.peekI() & 0b1);
     r.mh6pdu = static_cast<EMultiHomedIPv6PduSession>((stream.readI() >> 1) & 0b1);
-
+    r.tpmic = static_cast<ETransferOfPortManagementInformationContainers>((stream.readI() >> 2) & 0b1);
     // other octets are spare, if any
     stream.readOctetString(length - 1);
 
@@ -425,7 +458,7 @@ IE5gSmCapability IE5gSmCapability::Decode(const OctetView &stream, int length)
 
 void IE5gSmCapability::Encode(const IE5gSmCapability &ie, OctetString &stream)
 {
-    stream.appendOctet(static_cast<int>(ie.mh6pdu) << 1 | static_cast<int>(ie.rqos));
+    stream.appendOctet(static_cast<int>(ie.mh6pdu) << 2 | static_cast<int>(ie.rqos) << 1 | static_cast<int>(ie.tpmic));
 }
 
 IEUeSecurityCapability::IEUeSecurityCapability()

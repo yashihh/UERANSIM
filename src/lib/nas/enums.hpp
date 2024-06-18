@@ -307,6 +307,13 @@ enum class EReflectiveQoS
     SUPPORTED = 0b1,
 };
 
+// This bit indicates the 5GSM capability to support transfer of port management information containers 
+enum class ETransferOfPortManagementInformationContainers
+{
+    NOT_SUPPORTED = 0b0,
+    SUPPORTED = 0b1,
+};
+
 enum class EEmergencyServiceFallback3gppIndicator
 {
     NOT_SUPPORTED = 0b00,

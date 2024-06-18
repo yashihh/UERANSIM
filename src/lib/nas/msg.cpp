@@ -345,6 +345,9 @@ void PduSessionEstablishmentRequest::onBuild(NasMessageBuilder &b)
     b.optionalIE1(0xB, &alwaysOnPduSessionRequested);
     b.optionalIE(0x39, &smPduDnRequestContainer);
     b.optionalIE(0x7B, &extendedProtocolConfigurationOptions);
+    // b.optionalIE(0x6E, &macAddress);
+    b.optionalIE(0x6F, &residence_time);
+    b.optionalIE(0x74, &port_manage);
 }
 
 PduSessionModificationCommand::PduSessionModificationCommand()

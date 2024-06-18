@@ -443,6 +443,103 @@ void IEEapMessage::Encode(const IEEapMessage &ie, OctetString &stream)
     eap::EncodeEapPdu(stream, *ie.eap);
 }
 
+IEPortMangementService::IEPortMangementService(OctetString &&data):port_management_list(std::move(data))
+{
+    l = 0;
+}
+
+void IEPortMangementService::Encode(const IEPortMangementService &ie, OctetString &stream)
+{
+    // 9.2 Port management list 
+    if(stream.length() == 4){
+        stream.append(ie.port_management_list);
+        return;
+    }
+    int index = stream.length() - 3;
+    switch (stream.data()[index])
+    {
+    case 0x06: case 70:
+        // 9.3 Port management capability 
+        stream.append(ie.port_management_capability);
+        break;
+    case 0x01:
+        break;
+    case 71:
+        // 9.4 Port status
+        stream.append(ie.port_status);
+        break;
+    case 72:
+        // 9.5 Port update result
+        stream.append(ie.port_update_result);
+        break;
+    default:
+        break;
+    }
+}
+
+IEPortMangementService IEPortMangementService::Decode(const OctetView &stream, int length)
+{
+    IEPortMangementService r;
+    r.l = length;
+    r.port_management_list = stream.readOctetString(length);
+    return r;
+}
+
+IEPortManagementInformationContainer::IEPortManagementInformationContainer(IEPortMangementService &&msg) : container(std::move(msg))
+{
+    encode_header_type[0] = true;
+    encode_header_type[1] = false;
+    encode_header_type[2] = false;
+    encode_header_type[3] = false;
+}
+
+IEPortManagementInformationContainer IEPortManagementInformationContainer::Decode(const OctetView &stream, int length)
+{
+    IEPortManagementInformationContainer r;
+    r.service_msg_type = stream.readI();
+    r.iei = stream.readI();
+    r.l = length;
+    r.container = IEPortMangementService::Decode(stream, length-2);
+    return r;
+}
+
+void IEPortManagementInformationContainer::Encode(const IEPortManagementInformationContainer &ie, OctetString &stream)
+{
+    /*
+        two header:
+        1. port management service message type 
+        2. content iei (not necessary)
+    */
+    if(ie.encode_header_type[0]){
+        if(ie.container.port_management_capability.length() == 0){
+            // MANAGE PORT COMMAND message
+            stream.appendOctet(0b00000001);
+            stream.appendOctet(0b00000000); 
+            IEPortMangementService::Encode(ie.container, stream);
+        }
+        else{
+            stream.appendOctet(0b00000110);
+            //stream.appendOctet(0b00000000);
+            Encode2346(ie.container, stream);
+        }
+        return;
+    }
+
+    stream.appendOctet(0b00000010);
+    if(ie.encode_header_type[1]){
+        stream.appendOctet(70);
+        Encode2346(ie.container, stream);
+    }
+    if(ie.encode_header_type[2]){
+        stream.appendOctet(71);
+        Encode2346(ie.container, stream);
+    }
+    if(ie.encode_header_type[3]){
+        stream.appendOctet(72);
+        Encode2346(ie.container, stream);
+    }
+}
+
 Json ToJson(const IE5gsMobileIdentity &v)
 {
     switch (v.type)

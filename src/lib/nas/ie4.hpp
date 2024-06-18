@@ -53,6 +53,27 @@ struct IEPduAddress : InformationElement4
     static void Encode(const IEPduAddress &ie, OctetString &stream);
 };
 
+struct IEMacAddress : InformationElement4
+{
+    OctetString macAddress{};
+    std::string mac = "";
+    IEMacAddress() = default;
+    IEMacAddress(OctetString &&address, std::string &addr);
+
+    static void Encode(const IEMacAddress &ie, OctetString &stream);
+    static IEMacAddress Decode(const OctetView &stream, int length);
+};
+
+struct IEResidenceTime : InformationElement4
+{
+    OctetString residence_time{};
+    IEResidenceTime() = default;
+    IEResidenceTime(OctetString &&t);
+
+    static void Encode(const IEResidenceTime &ie, OctetString &stream);
+    static IEResidenceTime Decode(const OctetView &stream, int length);
+};
+
 struct IESNssai : InformationElement4
 {
     octet sst{};
@@ -224,9 +245,10 @@ struct IE5gSmCapability : InformationElement4
 {
     EReflectiveQoS rqos{};
     EMultiHomedIPv6PduSession mh6pdu{};
+    ETransferOfPortManagementInformationContainers tpmic{};
 
     IE5gSmCapability() = default;
-    IE5gSmCapability(EReflectiveQoS rqos, EMultiHomedIPv6PduSession mh6Pdu);
+    IE5gSmCapability(EReflectiveQoS rqos, EMultiHomedIPv6PduSession mh6Pdu, ETransferOfPortManagementInformationContainers tpmic);
 
     static IE5gSmCapability Decode(const OctetView &stream, int length);
     static void Encode(const IE5gSmCapability &ie, OctetString &stream);

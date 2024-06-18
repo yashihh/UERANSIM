@@ -198,6 +198,9 @@ static nr::ue::UeConfig *ReadConfigYaml()
                 if (yaml::HasField(slice, "sd"))
                     s.sNssai->sd = octet3{yaml::GetInt32(slice, "sd", 0, 0xFFFFFF)};
             }
+            //update
+            if(yaml::HasField(sess,"mac"))
+		        s.mac = yaml::GetString(sess, "mac");
 
             std::string type = yaml::GetString(sess, "type");
             if (type == "IPv4")

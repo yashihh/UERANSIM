@@ -21,6 +21,7 @@ static nas::IE5gSmCapability MakeSmCapability()
     nas::IE5gSmCapability cap{};
     cap.rqos = nas::EReflectiveQoS::NOT_SUPPORTED;
     cap.mh6pdu = nas::EMultiHomedIPv6PduSession::NOT_SUPPORTED;
+    cap.tpmic = nas::ETransferOfPortManagementInformationContainers::SUPPORTED;
     return cap;
 }
 
@@ -120,7 +121,26 @@ void NasSm::sendEstablishmentRequest(const SessionConfig &config)
     req->sscMode->sscMode = nas::ESscMode::SSC_MODE_1;
     req->extendedProtocolConfigurationOptions = std::move(iePco);
     req->smCapability = MakeSmCapability();
+    if(config.type == nas::EPduSessionType::ETHERNET){
+        //mac address
+    	req->pduSessionType->pduSessionType = nas::EPduSessionType::ETHERNET;
+    	req->macAddress = nas::IEMacAddress{};
+        std::string add = config.mac.value();
+        std::string temp = "";
+        for(size_t i=0 ; i<add.size();++i){
+            if(add[i] == ':')continue;
+            temp += add[i];
+        }
+        req->macAddress->mac = temp;
+	    req->macAddress->macAddress.appendUtf8(temp);
+    }
+    if (req->smCapability->tpmic == nas::ETransferOfPortManagementInformationContainers::SUPPORTED){
+        m_logger->debug("smCapability support Transfer of Port Management Information Containers");
 
+        //UE-DS-TT Residence Time for IEEE TSN network and TSCAI (QoS purpose)
+        req->residence_time = nas::IEResidenceTime{};
+        req->residence_time->residence_time.appendOctet8(utils::CurrentTimeStamp().ntpValue());
+    }
     /* Set relevant fields of the PT, and start T3580 */
     auto &pt = m_procedureTransactions[pti];
     pt.state = EPtState::PENDING;

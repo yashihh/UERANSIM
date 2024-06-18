@@ -204,6 +204,37 @@ struct IEEapMessage : InformationElement6
     static void Encode(const IEEapMessage &ie, OctetString &stream);
 };
 
+struct IEPortMangementService : InformationElement6
+{
+    //test
+    int l;
+    OctetString port_management_list{};
+    OctetString port_management_capability{};
+    OctetString port_status{}; 
+    OctetString port_update_result{}; 
+    IEPortMangementService() = default;
+    IEPortMangementService(OctetString &&data);
+
+    static IEPortMangementService Decode(const OctetView &stream, int length);
+    static void Encode(const IEPortMangementService &ie, OctetString &stream);
+};
+
+//pdu session ie
+struct IEPortManagementInformationContainer : InformationElement6
+{
+    //port Management list information element
+    IEPortMangementService container;
+    int service_msg_type;
+    int iei;
+    int l;
+    bool encode_header_type[4];
+    IEPortManagementInformationContainer() = default;
+    explicit IEPortManagementInformationContainer(IEPortMangementService &&msg);
+
+    static IEPortManagementInformationContainer Decode(const OctetView &stream, int length);
+    static void Encode(const IEPortManagementInformationContainer &ie, OctetString &stream);
+
+};
 Json ToJson(const IE5gsMobileIdentity &v);
 
 } // namespace nas

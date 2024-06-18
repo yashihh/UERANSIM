@@ -80,6 +80,7 @@ struct SessionConfig
     nas::EPduSessionType type{};
     std::optional<SingleSlice> sNssai{};
     std::optional<std::string> apn{};
+    std::optional<std::string> mac{};
     bool isEmergency{};
 };
 

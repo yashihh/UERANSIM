@@ -358,6 +358,9 @@ struct PduSessionEstablishmentRequest : SmMessage
 {
     IEIntegrityProtectionMaximumDataRate integrityProtectionMaximumDataRate{};
     std::optional<IEPduSessionType> pduSessionType{};
+    std::optional<IEMacAddress> macAddress{};
+    std::optional<IEResidenceTime> residence_time{};
+    std::optional<IEPortManagementInformationContainer> port_manage{};
     std::optional<IESscMode> sscMode{};
     std::optional<IE5gSmCapability> smCapability{};
     std::optional<IEMaximumNumberOfSupportedPacketFilters> maximumNumberOfSupportedPacketFilters{};
@@ -371,6 +374,7 @@ struct PduSessionEstablishmentRequest : SmMessage
 
 struct PduSessionModificationCommand : SmMessage
 {
+    std::optional<IEPortManagementInformationContainer> port_manage{};
     std::optional<IE5gSmCause> smCause{};
     std::optional<IESessionAmbr> sessionAmbr{};
     std::optional<IEGprsTimer> rqTimerValue{};
