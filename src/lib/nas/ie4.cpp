@@ -449,7 +449,7 @@ IE5gSmCapability IE5gSmCapability::Decode(const OctetView &stream, int length)
     IE5gSmCapability r;
     r.rqos = static_cast<EReflectiveQoS>(stream.peekI() & 0b1);
     r.mh6pdu = static_cast<EMultiHomedIPv6PduSession>((stream.readI() >> 1) & 0b1);
-    r.tpmic = static_cast<ETransferOfPortManagementInformationContainers>((stream.readI() >> 2) & 0b1);
+    r.tpmic = static_cast<ETransferOfPortManagementInformationContainers>((stream.readI() >> 7) & 0b1);
     // other octets are spare, if any
     stream.readOctetString(length - 1);
 
@@ -458,7 +458,7 @@ IE5gSmCapability IE5gSmCapability::Decode(const OctetView &stream, int length)
 
 void IE5gSmCapability::Encode(const IE5gSmCapability &ie, OctetString &stream)
 {
-    stream.appendOctet(static_cast<int>(ie.mh6pdu) << 2 | static_cast<int>(ie.rqos) << 1 | static_cast<int>(ie.tpmic));
+    stream.appendOctet(static_cast<int>(ie.tpmic) << 7 |static_cast<int>(ie.mh6pdu) << 1 | static_cast<int>(ie.rqos) );
 }
 
 IEUeSecurityCapability::IEUeSecurityCapability()

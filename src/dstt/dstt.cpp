@@ -133,3 +133,27 @@ double Dstt::egress(OctetString &stream, int messageType){
     return residence_time/1e9;
 }
 
+void Dstt::PMIC_show_dstt_capability(OctetString &content){
+    // PORT MANAGEMENT CAPABILITY body
+    // capability list
+
+    // Time Synchronization Information:
+    // 1. Supported PTP instance types 
+    content.appendOctet2(0x00E2);
+    // 2. Supported transport types
+    content.appendOctet2(0x00E3);
+    // 3. Supported delay mechanisms
+    content.appendOctet2(0x00E4);
+    // 4. PTP grandmaster capable
+    content.appendOctet2(0x00E5);
+    // 5. gPTP grandmaster capable
+    content.appendOctet2(0x00E6);
+    // 6. Supported PTP profiles
+    content.appendOctet2(0x00E7);
+    // 7. Number of supported PTP instances	
+    content.appendOctet2(0x00E8);
+    // 9. PTP instance list 
+    content.appendOctet2(0x00E9);
+
+}
+

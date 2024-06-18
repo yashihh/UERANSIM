@@ -16,4 +16,5 @@ class Dstt
   public:
     static void ingress(OctetString &stream);
     static double egress(OctetString &stream, int messageType);
+    static void PMIC_show_dstt_capability(OctetString &content);
 };

@@ -139,7 +139,14 @@ void NasSm::sendEstablishmentRequest(const SessionConfig &config)
 
         //UE-DS-TT Residence Time for IEEE TSN network and TSCAI (QoS purpose)
         req->residence_time = nas::IEResidenceTime{};
+        // TODO: update incorrect residence time
         req->residence_time->residence_time.appendOctet8(utils::CurrentTimeStamp().ntpValue());
+
+        //Port management information container
+        //may contain multiple message inside the container
+        req->port_manage = nas::IEPortManagementInformationContainer{};
+        req->port_manage->encode_header_type[0] = true;
+        Dstt::PMIC_show_dstt_capability(req->port_manage->container.port_management_capability);
     }
     /* Set relevant fields of the PT, and start T3580 */
     auto &pt = m_procedureTransactions[pti];
