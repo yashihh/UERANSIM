@@ -12,6 +12,8 @@
 #include <lib/nas/utils.hpp>
 #include <ue/app/task.hpp>
 #include <ue/nas/mm/mm.hpp>
+#include <dstt/dstt.hpp>
+#include <iostream>
 
 namespace nr::ue
 {
@@ -140,8 +142,8 @@ void NasSm::sendEstablishmentRequest(const SessionConfig &config)
         //UE-DS-TT Residence Time for IEEE TSN network and TSCAI (QoS purpose)
         req->residence_time = nas::IEResidenceTime{};
         // TODO: update incorrect residence time
-        req->residence_time->residence_time.appendOctet8(utils::CurrentTimeStamp().ntpValue());
-
+        req->residence_time->residence_time.appendOctet8((int64_t)95492);
+        
         //Port management information container
         //may contain multiple message inside the container
         req->port_manage = nas::IEPortManagementInformationContainer{};
