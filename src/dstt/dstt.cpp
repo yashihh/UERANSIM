@@ -152,7 +152,7 @@ void Dstt::PMIC_show_dstt_capability(OctetString &content){
     content.appendOctet2(0x00E7);
     // 7. Number of supported PTP instances	
     content.appendOctet2(0x00E8);
-    // 9. PTP instance list 
+    // 8. PTP instance list
     content.appendOctet2(0x00E9);
 
 }

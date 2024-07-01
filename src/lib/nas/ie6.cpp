@@ -518,6 +518,7 @@ void IEPortManagementInformationContainer::Encode(const IEPortManagementInformat
             IEPortMangementService::Encode(ie.container, stream);
         }
         else{
+            // PORT MANAGEMENT CAPABILITY message
             stream.appendOctet(0b00000110);
             //stream.appendOctet(0b00000000);
             Encode2346(ie.container, stream);
