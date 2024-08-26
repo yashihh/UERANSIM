@@ -12,6 +12,15 @@ Dstt::Dstt(){}
 Dstt::~Dstt(){}
 
 #define TLV_ORGANIZATION_EXTENSION			0x0003
+#define SupportedPTPInstanceTypes           0x00E2
+#define SupportedTransportTypes             0x00E3
+#define SupportedDelayMechanisms            0x00E4
+#define PTPGrandmasterCapable               0x00E5
+#define gPTPGrandmasterCapable              0x00E6
+#define SupportedPTPProfiles                0x00E7
+#define NumberOfSupportedPTPInstances       0x00E8
+#define PTPInstanceList                     0x00E9
+
 // TODO: add TLV extention to the suffix
 void Dstt::ingress(OctetString &stream){
     uint16_t empty = 0;
@@ -139,21 +148,21 @@ void Dstt::PMIC_show_dstt_capability(OctetString &content){
 
     // Time Synchronization Information:
     // 1. Supported PTP instance types 
-    content.appendOctet2(0x00E2);
+    content.appendOctet2(SupportedPTPInstanceTypes);
     // 2. Supported transport types
-    content.appendOctet2(0x00E3);
+    content.appendOctet2(SupportedTransportTypes);
     // 3. Supported delay mechanisms
-    content.appendOctet2(0x00E4);
+    content.appendOctet2(SupportedDelayMechanisms);
     // 4. PTP grandmaster capable
-    content.appendOctet2(0x00E5);
+    content.appendOctet2(PTPGrandmasterCapable);
     // 5. gPTP grandmaster capable
-    content.appendOctet2(0x00E6);
+    content.appendOctet2(gPTPGrandmasterCapable);
     // 6. Supported PTP profiles
-    content.appendOctet2(0x00E7);
+    content.appendOctet2(SupportedPTPProfiles);
     // 7. Number of supported PTP instances	
-    content.appendOctet2(0x00E8);
+    content.appendOctet2(NumberOfSupportedPTPInstances);
     // 8. PTP instance list
-    content.appendOctet2(0x00E9);
+    content.appendOctet2(PTPInstanceList);
 
 }
 
