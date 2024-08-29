@@ -7,11 +7,8 @@
 #include <cmath>
 
 
-Dstt::Dstt(){}
-
-Dstt::~Dstt(){}
-
 #define TLV_ORGANIZATION_EXTENSION			0x0003
+
 #define SupportedPTPInstanceTypes           0x00E2
 #define SupportedTransportTypes             0x00E3
 #define SupportedDelayMechanisms            0x00E4
@@ -21,7 +18,36 @@ Dstt::~Dstt(){}
 #define NumberOfSupportedPTPInstances       0x00E8
 #define PTPInstanceList                     0x00E9
 
-// TODO: add TLV extention to the suffix
+// Supported PTP Instance Types
+#define	OrdinaryClock        0x00
+#define	BoundaryClock        0x01
+#define	P2PTransparentClock  0x02
+#define	E2ETransparentClock  0x03
+
+// Supported transport types
+#define IPv4      0b00000000
+#define	IPv6      0b00000001
+#define	Ethernet  0b00000010
+
+// Supported PTP delay mechanisms
+#define	E2E          0x01
+#define	P2P          0x02
+#define	COMMON_P2P   0x03
+#define	SPECIAL      0x04
+#define	NO_MECHANISM 0xFE
+
+// Supported PTP profile
+#define	SMPTE                0b00000000
+#define	IEEE8021AS           0b00000001
+#define	E2EDefault           0b00000010 // Default delay request-response profile
+#define	P2PDefault           0b00000011 // Default delay peer-to-peer delay profile
+#define	HighAccuracyDefault  0b00000100 // High Accuracy Delay Request-Response Default PTP profile
+
+
+Dstt::Dstt(){}
+
+Dstt::~Dstt(){}
+
 void Dstt::ingress(OctetString &stream){
     uint16_t empty = 0;
 
@@ -166,3 +192,99 @@ void Dstt::PMIC_show_dstt_capability(OctetString &content){
 
 }
 
+OctetString Dstt::DecodePMIC(int msg_type, OctetString &content, int *response_header){
+    Dstt dstt;
+    OctetString ack_content;
+    if(msg_type == 1)   // MANAGE PORT COMMAND 
+    {
+        bool read_or_not = false, show_or_not = false, set_or_not = false;
+        int capability, num_success_read = 0, num_unsuccess_read = 0;
+        OctetString port_capability;
+        OctetString success_read;
+        OctetString unsuccess_read;
+        for(int index = 0; index < content.length();){
+            int operation = content.getI(index++);
+            switch (operation)
+            {
+            case 1: // ack DSTT port capability
+                PMIC_show_dstt_capability(port_capability);
+                show_or_not = true;
+                break;
+            case 2: // read DSTT port parameter
+                capability = content.get2I(index);
+                if(capability == SupportedPTPInstanceTypes){
+                    success_read.appendOctet2(capability);
+                    success_read.appendOctet2(1);
+                    success_read.appendOctet(E2ETransparentClock);
+                    num_success_read++;
+                }
+                else if(capability == SupportedTransportTypes){
+                    success_read.appendOctet2(capability);
+                    success_read.appendOctet2(1);
+                    success_read.appendOctet(IPv4);
+                    num_success_read++;
+                }
+                else if(capability == SupportedDelayMechanisms){
+                    success_read.appendOctet2(capability);
+                    success_read.appendOctet2(1);
+                    success_read.appendOctet(E2E);
+                    num_success_read++;
+                }
+                else if(capability == PTPGrandmasterCapable){
+                    success_read.appendOctet2(capability);
+                    success_read.appendOctet2(1);
+                    success_read.appendOctet(false);
+                    num_success_read++;
+                }
+                else if(capability == gPTPGrandmasterCapable){
+                    success_read.appendOctet2(capability);
+                    success_read.appendOctet2(1);
+                    success_read.appendOctet(false);
+                    num_success_read++;
+                }
+                else if(capability == SupportedPTPProfiles){
+                    success_read.appendOctet2(capability);
+                    success_read.appendOctet2(1);
+                    success_read.appendOctet(E2EDefault);
+                    num_success_read++;
+                }
+                // else if(capability == NumberOfSupportedPTPInstances){
+                //     success_read.appendOctet2(capability);
+                //     success_read.appendOctet2(1);
+                //     success_read.appendOctet(IPv4);
+                //     num_success_read++;
+                // }
+                else{ // DSTT don't support
+                    unsuccess_read.appendOctet2(capability);
+                    unsuccess_read.appendOctet(0b00000001);
+                    num_unsuccess_read++;
+                }
+                index+=2;
+                read_or_not = true;
+                break;
+            case 3: // set DSTT port parameter
+                set_or_not = true;
+                break;
+            default:
+                break;
+            }
+        }
+
+        if(show_or_not){
+            ack_content.append(port_capability);
+            response_header[0] = port_capability.length();
+        }
+        if(read_or_not){
+            ack_content.appendOctet(num_success_read);
+            ack_content.append(success_read);
+            ack_content.appendOctet(num_unsuccess_read);
+            ack_content.append(unsuccess_read);
+            response_header[1] = success_read.length() + unsuccess_read.length() + 2;
+        }
+        if(set_or_not){
+            
+        }
+    }
+    else if(msg_type == 4){}  // PORT MANAGEMENT NOTIFY ACK
+    return ack_content;
+}

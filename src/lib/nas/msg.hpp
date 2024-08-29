@@ -400,6 +400,7 @@ struct PduSessionModificationCommandReject : SmMessage
 struct PduSessionModificationComplete : SmMessage
 {
     std::optional<IEExtendedProtocolConfigurationOptions> extendedProtocolConfigurationOptions{};
+    std::optional<IEPortManagementInformationContainer> port_manage{};
 
     PduSessionModificationComplete();
     void onBuild(NasMessageBuilder &b);

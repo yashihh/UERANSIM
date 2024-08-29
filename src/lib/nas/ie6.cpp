@@ -458,17 +458,17 @@ void IEPortMangementService::Encode(const IEPortMangementService &ie, OctetStrin
     int index = stream.length() - 3;
     switch (stream.data()[index])
     {
-    case 0x06: case 70:
+    case 0x06: case 0x70:
         // 9.3 Port management capability 
         stream.append(ie.port_management_capability);
         break;
     case 0x01:
         break;
-    case 71:
+    case 0x71:
         // 9.4 Port status
         stream.append(ie.port_status);
         break;
-    case 72:
+    case 0x72:
         // 9.5 Port update result
         stream.append(ie.port_update_result);
         break;
@@ -528,15 +528,15 @@ void IEPortManagementInformationContainer::Encode(const IEPortManagementInformat
 
     stream.appendOctet(0b00000010);
     if(ie.encode_header_type[1]){
-        stream.appendOctet(70);
+        stream.appendOctet(0x70);
         Encode2346(ie.container, stream);
     }
     if(ie.encode_header_type[2]){
-        stream.appendOctet(71);
+        stream.appendOctet(0x71);
         Encode2346(ie.container, stream);
     }
     if(ie.encode_header_type[3]){
-        stream.appendOctet(72);
+        stream.appendOctet(0x72);
         Encode2346(ie.container, stream);
     }
 }

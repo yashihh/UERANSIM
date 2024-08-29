@@ -362,6 +362,7 @@ void PduSessionModificationCommand::onBuild(NasMessageBuilder &b)
     b.optionalIE(0x2A, &sessionAmbr);
     b.optionalIE(0x56, &rqTimerValue);
     b.optionalIE1(0x8, &alwaysOnPduSessionIndication);
+    b.optionalIE(0x74, &port_manage);
     b.optionalIE(0x7A, &authorizedQoSRules);
     b.optionalIE(0x7F, &mappedEpsBearerContexts);
     b.optionalIE(0x79, &authorizedQoSFlowDescriptions);
@@ -389,6 +390,7 @@ PduSessionModificationComplete::PduSessionModificationComplete()
 void PduSessionModificationComplete::onBuild(NasMessageBuilder &b)
 {
     b.optionalIE(0x7B, &extendedProtocolConfigurationOptions);
+    b.optionalIE(0x74, &port_manage);
 }
 
 PduSessionModificationReject::PduSessionModificationReject()

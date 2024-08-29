@@ -72,6 +72,7 @@ class NasSm
     void sendEstablishmentRequest(const SessionConfig &config);
     void receiveEstablishmentAccept(const nas::PduSessionEstablishmentAccept &msg);
     void receiveEstablishmentReject(const nas::PduSessionEstablishmentReject &msg);
+    void receiveModificationCommand(const nas::PduSessionModificationCommand &msg);
 
   private: /* Session Release */
     void sendReleaseRequest(int psi);

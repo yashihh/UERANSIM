@@ -233,4 +233,70 @@ void NasSm::receiveEstablishmentReject(const nas::PduSessionEstablishmentReject 
     }
 }
 
+std::string pkt_hex_dump(std::string data){
+    std::string str = "packet hex dump:\n";
+    int cnt = 0;
+    int byte = 0;
+    for (size_t i = 0; i < data.size(); i++){
+        str += data[i];
+        cnt += 1;
+        if ( cnt == 2 ){
+            str += " ";
+            cnt = 0;
+            byte += 1;
+            if( byte % 16 == 0 && i != 0){
+                str += "\n";
+                byte = 0;
+            }
+        }
+    }
+    return str;
+}
+
+void NasSm::receiveModificationCommand(const nas::PduSessionModificationCommand &msg){
+    m_logger->debug("PDU Session modification command received");
+    auto tmp =  nas::utils::DeepCopyIe(*msg.port_manage);
+    m_logger->debug("request message type : [%d]", tmp.service_msg_type);
+    m_logger->debug("request iei : [%d]", tmp.iei);
+    m_logger->debug("request length : [%d]", tmp.l);
+    m_logger->debug("msg length : [%d]", tmp.container.l);
+    auto ack = std::make_unique<nas::PduSessionModificationComplete>();
+    ack->pduSessionId = msg.pduSessionId;
+    ack->pti = msg.pti;
+    ack->port_manage = nas::IEPortManagementInformationContainer{};
+    int response_header[3] = {0};
+    OctetString full_message = Dstt::DecodePMIC(tmp.service_msg_type, tmp.container.port_management_list, response_header);
+    int index = 0;
+    ack->port_manage->encode_header_type[0] = false;
+    //m_logger->debug("request type 0 len : [%d]", response_header[0]);
+    //m_logger->debug("request type 1 len : [%d]", response_header[1]);
+    //m_logger->debug("request type 2 len : [%d]", response_header[2]);
+    if(response_header[0] > 0){
+        ack->port_manage->container.port_management_capability = full_message.subCopy(index, response_header[0]);
+        index += response_header[0];
+        ack->port_manage->encode_header_type[1] = true;
+    }
+    if(response_header[1] > 1){
+        ack->port_manage->container.port_status = full_message.subCopy(index, response_header[1]);
+        index += response_header[1];
+        ack->port_manage->encode_header_type[2] = true;
+        // m_logger->debug("below show port_status in UE");
+        // m_logger->debug("%s", pkt_hex_dump(ack->port_manage->container.port_status.toHexString()).c_str());
+    }
+    if(response_header[2] > 1){
+        ack->port_manage->container.port_update_result = full_message.subCopy(index, response_header[1]);
+        ack->port_manage->encode_header_type[3] = true;
+    }
+
+    
+    auto &pt = m_procedureTransactions[msg.pti];
+    pt.state = EPtState::PENDING;
+    //pt.timer = newTransactionTimer(3591);
+    pt.message = std::move(ack);
+    pt.psi = msg.pduSessionId;
+
+    /* Send SM message */
+    sendSmMessage(msg.pduSessionId, *pt.message);
+}
+
 } // namespace nr::ue
