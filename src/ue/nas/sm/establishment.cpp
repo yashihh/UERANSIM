@@ -268,30 +268,34 @@ void NasSm::receiveModificationCommand(const nas::PduSessionModificationCommand 
     OctetString full_message = Dstt::DecodePMIC(tmp.service_msg_type, tmp.container.port_management_list, response_header);
     int index = 0;
     ack->port_manage->encode_header_type[0] = false;
-    //m_logger->debug("request type 0 len : [%d]", response_header[0]);
-    //m_logger->debug("request type 1 len : [%d]", response_header[1]);
-    //m_logger->debug("request type 2 len : [%d]", response_header[2]);
-    if(response_header[0] > 0){
+    
+    /* Port management capability 24.539 9.3 */
+    if(response_header[0] > 0){ 
         ack->port_manage->container.port_management_capability = full_message.subCopy(index, response_header[0]);
         index += response_header[0];
         ack->port_manage->encode_header_type[1] = true;
     }
+
+    /* Port status 24.539 9.4 */
     if(response_header[1] > 1){
         ack->port_manage->container.port_status = full_message.subCopy(index, response_header[1]);
         index += response_header[1];
         ack->port_manage->encode_header_type[2] = true;
-        // m_logger->debug("below show port_status in UE");
-        // m_logger->debug("%s", pkt_hex_dump(ack->port_manage->container.port_status.toHexString()).c_str());
+        m_logger->debug("below show port_status in UE");
+        m_logger->debug("%s", pkt_hex_dump(ack->port_manage->container.port_status.toHexString()).c_str());
     }
+    /* Port update result 24.539 9.5 */
     if(response_header[2] > 1){
-        ack->port_manage->container.port_update_result = full_message.subCopy(index, response_header[1]);
+        ack->port_manage->container.port_update_result = full_message.subCopy(index, response_header[2]);
         ack->port_manage->encode_header_type[3] = true;
+        m_logger->debug("below show port_update_status in UE");
+        m_logger->debug("%s", pkt_hex_dump(ack->port_manage->container.port_update_result.toHexString()).c_str());
     }
 
     
     auto &pt = m_procedureTransactions[msg.pti];
     pt.state = EPtState::PENDING;
-    //pt.timer = newTransactionTimer(3591);
+    pt.timer = newTransactionTimer(3591);
     pt.message = std::move(ack);
     pt.psi = msg.pduSessionId;
 

@@ -7,42 +7,31 @@
 #include <cmath>
 
 
-#define TLV_ORGANIZATION_EXTENSION			0x0003
+std::unordered_map<int, std::string> clockTypeMap = {
+        {OrdinaryClock, "OrdinaryClock"},
+        {BoundaryClock, "BoundaryClock"},
+        {P2PTransparentClock, "P2PTransparentClock"},
+        {E2ETransparentClock, "E2ETransparentClock"}
+};
 
-#define SupportedPTPInstanceTypes           0x00E2
-#define SupportedTransportTypes             0x00E3
-#define SupportedDelayMechanisms            0x00E4
-#define PTPGrandmasterCapable               0x00E5
-#define gPTPGrandmasterCapable              0x00E6
-#define SupportedPTPProfiles                0x00E7
-#define NumberOfSupportedPTPInstances       0x00E8
-#define PTPInstanceList                     0x00E9
+std::unordered_map<int, std::string> ptpProfileMap = {
+        {SMPTE, "SMPTE"},
+        {IEEE8021AS, "IEEE8021AS"},
+        {E2EDefault, "E2EDefault"},
+        {P2PDefault, "P2PDefault"},
+        {HighAccuracyDefault, "HighAccuracyDefault"}
+};
 
-// Supported PTP Instance Types
-#define	OrdinaryClock        0x00
-#define	BoundaryClock        0x01
-#define	P2PTransparentClock  0x02
-#define	E2ETransparentClock  0x03
+std::unordered_map<int, std::string> transportTypeMap = {
+        {NETWORK_IPv4, "IPV4"},
+        {NETWORK_IPv6, "IPV6"},
+        {NETWORK_Ethernet, "ETH"}
+};
 
-// Supported transport types
-#define IPv4      0b00000000
-#define	IPv6      0b00000001
-#define	Ethernet  0b00000010
-
-// Supported PTP delay mechanisms
-#define	E2E          0x01
-#define	P2P          0x02
-#define	COMMON_P2P   0x03
-#define	SPECIAL      0x04
-#define	NO_MECHANISM 0xFE
-
-// Supported PTP profile
-#define	SMPTE                0b00000000
-#define	IEEE8021AS           0b00000001
-#define	E2EDefault           0b00000010 // Default delay request-response profile
-#define	P2PDefault           0b00000011 // Default delay peer-to-peer delay profile
-#define	HighAccuracyDefault  0b00000100 // High Accuracy Delay Request-Response Default PTP profile
-
+std::unordered_map<int, std::string> gmEnableMap = {
+        {1, "TRUE"},
+        {0, "FALSE"}
+};
 
 Dstt::Dstt(){}
 
@@ -197,20 +186,25 @@ OctetString Dstt::DecodePMIC(int msg_type, OctetString &content, int *response_h
     OctetString ack_content;
     if(msg_type == 1)   // MANAGE PORT COMMAND 
     {
-        bool read_or_not = false, show_or_not = false, set_or_not = false;
-        int capability, num_success_read = 0, num_unsuccess_read = 0;
+        bool read_or_not = false, show_or_not = false, set_or_not = false, setEnable = false;
+        int capability, parameter, num_success_read = 0, num_unsuccess_read = 0;
+        int ptpinstancelistLength, ptpinstanceContentLength, ptpInstanceID, value, valueLength = 0, num_success_set = 0, num_unsuccess_set = 0;
         OctetString port_capability;
         OctetString success_read;
         OctetString unsuccess_read;
+        OctetString success_set;
+        OctetString unsuccess_set;
         for(int index = 0; index < content.length();){
             int operation = content.getI(index++);
             switch (operation)
             {
             case 1: // ack DSTT port capability
+                printf("[DEBUG] ack DSTT port capability\n");
                 PMIC_show_dstt_capability(port_capability);
                 show_or_not = true;
                 break;
             case 2: // read DSTT port parameter
+                printf("[DEBUG] read DSTT port parameter\n");
                 capability = content.get2I(index);
                 if(capability == SupportedPTPInstanceTypes){
                     success_read.appendOctet2(capability);
@@ -221,7 +215,7 @@ OctetString Dstt::DecodePMIC(int msg_type, OctetString &content, int *response_h
                 else if(capability == SupportedTransportTypes){
                     success_read.appendOctet2(capability);
                     success_read.appendOctet2(1);
-                    success_read.appendOctet(IPv4);
+                    success_read.appendOctet(NETWORK_IPv4);
                     num_success_read++;
                 }
                 else if(capability == SupportedDelayMechanisms){
@@ -248,12 +242,12 @@ OctetString Dstt::DecodePMIC(int msg_type, OctetString &content, int *response_h
                     success_read.appendOctet(E2EDefault);
                     num_success_read++;
                 }
-                // else if(capability == NumberOfSupportedPTPInstances){
-                //     success_read.appendOctet2(capability);
-                //     success_read.appendOctet2(1);
-                //     success_read.appendOctet(IPv4);
-                //     num_success_read++;
-                // }
+                else if(capability == NumberOfSupportedPTPInstances){
+                    success_read.appendOctet2(capability);
+                    success_read.appendOctet2(2);
+                    success_read.appendOctet2(1);
+                    num_success_read++;
+                }
                 else{ // DSTT don't support
                     unsuccess_read.appendOctet2(capability);
                     unsuccess_read.appendOctet(0b00000001);
@@ -263,6 +257,59 @@ OctetString Dstt::DecodePMIC(int msg_type, OctetString &content, int *response_h
                 read_or_not = true;
                 break;
             case 3: // set DSTT port parameter
+                printf("[DEBUG] set DSTT port parameter\n");
+                capability = content.get2I(index);
+                if(capability == PTPInstanceList){
+                    printf("capability is [PTPInstanceList]\n");
+                    index+=2;
+                    ptpinstancelistLength = content.get2I(index); // Length of PTP instance list contents 
+                    index+=2;
+                    for(int i = 0; i < ptpinstancelistLength;){ // PTP instances
+                        ptpinstanceContentLength = content.get2I(index);
+                        index+=2;
+                        ptpInstanceID = content.get2I(index);
+                        index+=2;
+
+                        printf("ptpInstanceID is [%d]\n",ptpInstanceID);
+
+                        OctetString ptpInstance = content.subCopy(index);
+                        for(int k = 0; k < ptpinstanceContentLength;){ // PTP instance[i]'s parameter
+                            
+                            parameter = ptpInstance.get2I(k);
+                            k+=2;
+                            valueLength = ptpInstance.get2I(k);
+                            k+=2;
+                            
+                            if (parameter == PTP_profile){
+                                value = ptpInstance.getI(k);
+                                printf("PTP profile :[%s]\n",clockTypeMap[value].c_str());
+                            
+                            }else if (parameter == Transport_type){
+                                value = ptpInstance.getI(k);
+                                printf("Transport Type :[%s]\n",transportTypeMap[value].c_str());
+                            }else if (parameter == Grandmaster_enabled){
+                                value = ptpInstance.getI(k);
+                                printf("GM Enable :[%s]\n",gmEnableMap[value].c_str());
+                            
+                            }else{ // DSTT don't support
+                                printf("port parameter [%d] not supported.", parameter);
+                            }
+                            k++;
+                        }
+                        i += ptpinstanceContentLength + 4;
+                    }
+                    OctetString setValue = content.subCopy(6);
+                    success_set.appendOctet2(capability);
+                    success_set.appendOctet2(ptpinstancelistLength);
+                    success_set.append(setValue);
+                    num_success_set++;
+
+                    index += ptpinstancelistLength;
+                }else{
+                    unsuccess_set.appendOctet2(capability);
+                    unsuccess_set.appendOctet(0b00000001);
+                    num_unsuccess_set++;
+                }
                 set_or_not = true;
                 break;
             default:
@@ -279,10 +326,14 @@ OctetString Dstt::DecodePMIC(int msg_type, OctetString &content, int *response_h
             ack_content.append(success_read);
             ack_content.appendOctet(num_unsuccess_read);
             ack_content.append(unsuccess_read);
-            response_header[1] = success_read.length() + unsuccess_read.length() + 2;
+            response_header[1] = success_read.length() + unsuccess_read.length() +2;
         }
         if(set_or_not){
-            
+            ack_content.appendOctet(num_success_set);
+            ack_content.append(success_set);
+            ack_content.appendOctet(num_unsuccess_set);
+            ack_content.append(unsuccess_set);
+            response_header[2] = success_set.length() + unsuccess_set.length() + 2;
         }
     }
     else if(msg_type == 4){}  // PORT MANAGEMENT NOTIFY ACK
