@@ -295,7 +295,7 @@ void NasSm::receiveModificationCommand(const nas::PduSessionModificationCommand 
     
     auto &pt = m_procedureTransactions[msg.pti];
     pt.state = EPtState::PENDING;
-    pt.timer = newTransactionTimer(3591);
+    pt.timer = newTransactionTimer(3580);
     pt.message = std::move(ack);
     pt.psi = msg.pduSessionId;
 
